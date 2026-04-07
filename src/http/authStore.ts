@@ -13,7 +13,7 @@ interface AuthState {
   login: (credentials: { email: string; password: string }) => Promise<void>;
   register: (credentials: { email: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
-  logoutSync: () => void;      // синхронный сброс для перехватчика
+  logoutSync: () => void;
   checkAuth: () => Promise<void>;
 }
 
@@ -42,12 +42,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     } finally {
       localStorage.removeItem('accessToken');
       set({ user: null, isAuth: false });
+      window.location.hash = '#/';
     }
   },
 
   logoutSync: () => {
     localStorage.removeItem('accessToken');
     set({ user: null, isAuth: false });
+    if (!window.location.hash.includes('/login')) {
+      window.location.hash = '#/login';
+    }
   },
 
   checkAuth: async () => {
