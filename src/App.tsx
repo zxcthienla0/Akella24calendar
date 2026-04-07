@@ -11,11 +11,13 @@ import { useEffect } from 'react';
 
 axios.defaults.withCredentials = true;
 
+// Глобальный перехватчик 401 – если сервер вернул неавторизован, разлогиниваем
 axios.interceptors.response.use(
   response => response,
   error => {
     if (error.response?.status === 401) {
-      useAuthStore.getState().logout();
+      // Сбрасываем состояние (даже если запрос logout не отработает)
+      useAuthStore.getState().logoutSync(); 
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
     return Promise.reject(error);
@@ -23,13 +25,17 @@ axios.interceptors.response.use(
 );
 
 function App() {
-    const {user, logout, isAuth} = useAuthStore();
+    const { user, logout, isAuth, checkAuth } = useAuthStore();
 
+    // Проверяем сессию при загрузке приложения
+    useEffect(() => {
+        checkAuth();
+    }, [checkAuth]);
+
+    // Обработчик события неавторизованного доступа (для перенаправления)
     useEffect(() => {
         const handleUnauthorized = () => {
-            setTimeout(() => {
-                window.location.hash = '#/login';
-            }, 10);
+            window.location.hash = '#/login';
         };
         window.addEventListener('auth:unauthorized', handleUnauthorized);
         return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
